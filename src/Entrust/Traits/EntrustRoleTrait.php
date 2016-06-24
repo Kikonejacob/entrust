@@ -14,13 +14,22 @@ use Illuminate\Support\Facades\Cache;
 
 trait EntrustRoleTrait
 {
+    /*Create a cache tag name based on database name and the value of  entrust.permission_role_table config
+      This is useful for multiple databases projects */
+    public function getCacheTagName(){
+
+        $dbName=$this->getConnection()->getDatabaseName();
+
+        return $dbName.'.'.Config::get('entrust.permission_role_table');
+
+    }
     //Big block of caching functionality.
     public function cachedPermissions()
     {
         $rolePrimaryKey = $this->primaryKey;
         $cacheKey = 'entrust_permissions_for_role_'.$this->$rolePrimaryKey;
         if(Cache::getStore() instanceof TaggableStore) {
-            return Cache::tags(Config::get('entrust.permission_role_table'))->remember($cacheKey, Config::get('cache.ttl'), function () {
+            return Cache::tags($this->getCacheTagName())->remember($cacheKey, Config::get('cache.ttl'), function () {
                 return $this->perms()->get();
             });
         }
@@ -32,7 +41,7 @@ trait EntrustRoleTrait
             return false;
         }
         if(Cache::getStore() instanceof TaggableStore) {
-            Cache::tags(Config::get('entrust.permission_role_table'))->flush();
+            Cache::tags($this->getCacheTagName())->flush();
         }
         return true;
     }
@@ -42,7 +51,7 @@ trait EntrustRoleTrait
             return false;
         }
         if(Cache::getStore() instanceof TaggableStore) {
-            Cache::tags(Config::get('entrust.permission_role_table'))->flush();
+            Cache::tags($this->getCacheTagName())->flush();
         }
         return true;
     }
@@ -52,7 +61,7 @@ trait EntrustRoleTrait
             return false;
         }
         if(Cache::getStore() instanceof TaggableStore) {
-            Cache::tags(Config::get('entrust.permission_role_table'))->flush();
+            Cache::tags($this->getCacheTagName())->flush();
         }
         return true;
     }
