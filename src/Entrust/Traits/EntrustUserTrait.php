@@ -15,13 +15,22 @@ use InvalidArgumentException;
 
 trait EntrustUserTrait
 {
+    /*Create a cache tag name based on database name and the value of  entrust.role_user_table config
+      This is useful for multiple databases projects */
+    public function getCacheTagName(){
+
+        $dbName=$this->getConnection()->getDatabaseName();
+
+        return $dbName.'.'.Config::get('entrust.role_user_table');
+
+    }
     //Big block of caching functionality.
     public function cachedRoles()
     {
         $userPrimaryKey = $this->primaryKey;
         $cacheKey = 'entrust_roles_for_user_'.$this->$userPrimaryKey;
         if(Cache::getStore() instanceof TaggableStore) {
-            return Cache::tags(Config::get('entrust.role_user_table'))->remember($cacheKey, Config::get('cache.ttl'), function () {
+            return Cache::tags($this->getCacheTagName())->remember($cacheKey, Config::get('cache.ttl'), function () {
                 return $this->roles()->get();
             });
         }
@@ -31,21 +40,21 @@ trait EntrustUserTrait
     {   //both inserts and updates
         parent::save($options);
         if(Cache::getStore() instanceof TaggableStore) {
-            Cache::tags(Config::get('entrust.role_user_table'))->flush();
+            Cache::tags($this->getCacheTagName())->flush();
         }
     }
     public function delete(array $options = [])
     {   //soft or hard
         parent::delete($options);
         if(Cache::getStore() instanceof TaggableStore) {
-            Cache::tags(Config::get('entrust.role_user_table'))->flush();
+            Cache::tags($this->getCacheTagName())->flush();
         }
     }
     public function restore()
     {   //soft delete undo's
         parent::restore();
         if(Cache::getStore() instanceof TaggableStore) {
-            Cache::tags(Config::get('entrust.role_user_table'))->flush();
+            Cache::tags($this->getCacheTagName())->flush();
         }
     }
 
